@@ -40,7 +40,7 @@ timeout /t 10
 :: Create admin user with predefined password from .env file
 echo Creating admin user...
 docker exec -ti %KIMAI_CONTAINER% ^
-    /opt/kimai/bin/console kimai:user:create admin %ADMIN_EMAIL% ROLE_SUPER_ADMIN --password %ADMIN_PASSWORD%
+    /opt/kimai/bin/console kimai:user:create admin %ADMIN_EMAIL% ROLE_SUPER_ADMIN %ADMIN_PASSWORD%
 
 echo Kimai is now running at http://localhost:%KIMAI_PORT%
 echo Press any key to stop...
