@@ -1,54 +1,44 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal
 
-:: Load environment variables from .env file
-if not exist .env (
-    echo .env file not found!
-    exit /b 1
-)
-for /f "tokens=1,2 delims==" %%i in ('.env') do (
-    set %%i=%%j
-)
+REM Load environment variables from .env file
+for /f "usebackq tokens=* delims=" %%x in (.env) do set %%x
 
-:: Cleanup existing containers
-echo Stopping existing containers...
-docker stop %MYSQL_CONTAINER% %KIMAI_CONTAINER%
-docker rm %MYSQL_CONTAINER% %KIMAI_CONTAINER%
-
-:: Start MySQL container
 echo Starting MySQL container...
-docker run --rm --name %MYSQL_CONTAINER% ^
-    -e MYSQL_DATABASE=%MYSQL_DATABASE% ^
-    -e MYSQL_USER=%MYSQL_USER% ^
-    -e MYSQL_PASSWORD=%MYSQL_PASSWORD% ^
-    -e MYSQL_ROOT_PASSWORD=%MYSQL_ROOT_PASSWORD% ^
-    -p %MYSQL_PORT%:3306 -d mysql:8.0
+docker run -d --name %MYSQL_CONTAINER% ^
+  --env MYSQL_DATABASE=%MYSQL_DATABASE% ^
+  --env MYSQL_USER=%MYSQL_USER% ^
+  --env MYSQL_PASSWORD=%MYSQL_PASSWORD% ^
+  --env MYSQL_ROOT_PASSWORD=%MYSQL_ROOT_PASSWORD% ^
+  -p %MYSQL_PORT%:3306 ^
+  --restart unless-stopped ^
+  --volume kimai-mysql-data:/var/lib/mysql ^
+  --network kimai-network ^
+  mysql:8.0
 
-:: Wait for MySQL to initialize
 echo Waiting for MySQL to initialize...
-timeout /t 20
+timeout /t 15 >nul
 
-:: Start Kimai container
 echo Starting Kimai container...
-docker run --rm --name %KIMAI_CONTAINER% -d ^
-    -p %KIMAI_PORT%:8001 ^
-    -e DATABASE_URL="mysql://%MYSQL_USER%:%MYSQL_PASSWORD%@host.docker.internal:%MYSQL_PORT%/%MYSQL_DATABASE%?charset=utf8mb4&serverVersion=8.0.0" ^
-    kimai/kimai2:apache
+docker run -d --name %KIMAI_CONTAINER% ^
+  --env DATABASE_URL=mysql://%MYSQL_USER%:%MYSQL_PASSWORD%@%MYSQL_CONTAINER%:3306/%MYSQL_DATABASE% ^
+  --env ADMIN_MAIL=%ADMIN_EMAIL% ^
+  --env ADMIN_PASSWORD=%ADMIN_PASSWORD% ^
+  -p %KIMAI_PORT%:8001 ^
+  --restart unless-stopped ^
+  --network kimai-network ^
+  --volume kimai-data:/opt/kimai ^
+  kimai/kimai2:latest
 
-:: Wait for Kimai to initialize
 echo Waiting for Kimai to initialize...
-timeout /t 10
+timeout /t 20 >nul
 
-:: Create admin user
 echo Creating admin user...
-docker exec -ti %KIMAI_CONTAINER% ^
-    /opt/kimai/bin/console kimai:user:create admin %ADMIN_EMAIL% ROLE_SUPER_ADMIN
+docker exec -it %KIMAI_CONTAINER% bin/console kimai:create-user admin %ADMIN_EMAIL% ROLE_SUPER_ADMIN
 
-echo Kimai is now running at http://localhost:%KIMAI_PORT%
-echo Press any key to stop...
-pause
+echo Kimai is up and running!
+echo Access it at: http://localhost:%KIMAI_PORT%
+echo You will be prompted to set the admin password in the terminal.
 
-:: Cleanup on exit
-docker stop %MYSQL_CONTAINER% %KIMAI_CONTAINER%
-docker rm %MYSQL_CONTAINER% %KIMAI_CONTAINER%
 endlocal
+pause
