@@ -47,6 +47,21 @@ start.bat
 
 This will pull the necessary Docker images and start the MySQL and Kimai containers.
 
+**Note**: After running the `start.sh` or `start.bat` script, you will be prompted to set the password for the admin user:
+
+```
+Starting MySQL container...
+49be3b9db814e43cf8f597ebc27d79407faf0013f6fe1a8d33c7172d63b31065
+Waiting for MySQL to initialize...
+Starting Kimai container...
+a77ec029bfad3752b791ed55c7b0c98a1817526a5d92aa7f6d1fda3166637bf4
+Waiting for Kimai to initialize...
+Creating admin user...
+Please enter the password:
+```
+
+When prompted, enter the desired password for the admin account. This password will be used to log in to the Kimai dashboard.
+
 ---
 
 ### 4. Access Kimai
@@ -57,23 +72,41 @@ http://localhost:8001
 ```
 
 - **Email**: `admin@example.com`
-- **Password**: `admin`
+- **Password**: The password you entered during setup.
 
 ---
 
-## Stopping and Cleaning Up
-To stop and remove the running containers, use the following commands:
+## Managing Docker Containers
 
-```bash
-docker stop kimai-mysql kimai-app
-docker rm kimai-mysql kimai-app
-```
+After running the `start` command, if you need to **start**, **stop**, or **restart** the Kimai and MySQL containers, it is recommended to use the Docker Desktop application or the Docker CLI.
 
-To remove all data (including volumes):
+### Using Docker Desktop
+1. Open the Docker Desktop application.
+2. Locate the `kimai-mysql` and `kimai-app` containers.
+3. Use the available controls to **start**, **stop**, or **restart** the containers.
 
-```bash
-docker-compose down --volumes
-```
+### Using Docker CLI
+Alternatively, you can use the Docker CLI for container management:
+
+- **Stop the containers**:
+  ```bash
+  docker stop kimai-mysql kimai-app
+  ```
+
+- **Start the containers**:
+  ```bash
+  docker start kimai-mysql kimai-app
+  ```
+
+- **Restart the containers**:
+  ```bash
+  docker restart kimai-mysql kimai-app
+  ```
+
+- **Remove the containers**:
+  ```bash
+  docker rm kimai-mysql kimai-app
+  ```
 
 ---
 
