@@ -1,0 +1,22 @@
+# Node modules and dependencies
+node_modules/
+*.log
+
+# Ignore environment variables
+.env
+
+# macOS system files
+.DS_Store
+
+# Docker related files
+docker-compose.override.yml
+docker-compose.logs
+
+# Windows system files
+Thumbs.db
+Desktop.ini
+
+# IDE files
+.idea/
+.vscode/
+*.iml
