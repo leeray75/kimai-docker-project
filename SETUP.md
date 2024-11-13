@@ -81,8 +81,8 @@ http://localhost:8001
 
 Log in using the credentials you set in the `.env` file:
 
-- **Email**: `admin@example.com`
-- **Password**: `admin`
+- **Username**: `admin`
+- **Password**: The password specified in the `.env` file under `ADMIN_PASSWORD`.
 
 ---
 

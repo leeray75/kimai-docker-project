@@ -56,7 +56,7 @@ Once the application is running, open your browser and navigate to:
 http://localhost:8001
 ```
 
-- **Email**: `admin@example.com`
+- **Username**: `admin`
 - **Password**: The password specified in the `.env` file under `ADMIN_PASSWORD`.
 
 ---
