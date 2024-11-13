@@ -45,22 +45,7 @@ Edit the `.env` file to adjust any variables as needed, such as ports and admin 
 start.bat
 ```
 
-This will pull the necessary Docker images and start the MySQL and Kimai containers.
-
-**Note**: After running the `start.sh` or `start.bat` script, you will be prompted to set the password for the admin user:
-
-```
-Starting MySQL container...
-49be3b9db814e43cf8f597ebc27d79407faf0013f6fe1a8d33c7172d63b31065
-Waiting for MySQL to initialize...
-Starting Kimai container...
-a77ec029bfad3752b791ed55c7b0c98a1817526a5d92aa7f6d1fda3166637bf4
-Waiting for Kimai to initialize...
-Creating admin user...
-Please enter the password:
-```
-
-When prompted, enter the desired password for the admin account. This password will be used to log in to the Kimai dashboard.
+This will pull the necessary Docker images and start the MySQL and Kimai containers. The admin user will be created automatically using the credentials from the `.env` file, including the password.
 
 ---
 
@@ -72,7 +57,7 @@ http://localhost:8001
 ```
 
 - **Email**: `admin@example.com`
-- **Password**: The password you entered during setup.
+- **Password**: The password specified in the `.env` file under `ADMIN_PASSWORD`.
 
 ---
 
@@ -122,3 +107,4 @@ For detailed step-by-step instructions on running this project on your local mac
 
 ## License
 This project is open-source and available under the [MIT License](LICENSE).
+
