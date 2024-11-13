@@ -37,17 +37,18 @@ docker run --name %KIMAI_CONTAINER% -d ^
 echo Waiting for Kimai to initialize...
 timeout /t 10
 
-:: Create admin user if not already created
+:: Create admin user with predefined password from .env file
 echo Creating admin user...
 docker exec -ti %KIMAI_CONTAINER% ^
-    /opt/kimai/bin/console kimai:user:create admin %ADMIN_EMAIL% ROLE_SUPER_ADMIN
+    /opt/kimai/bin/console kimai:user:create admin %ADMIN_EMAIL% ROLE_SUPER_ADMIN --password %ADMIN_PASSWORD%
 
 echo Kimai is now running at http://localhost:%KIMAI_PORT%
 echo Press any key to stop...
+
+:: Wait for user input to stop the containers
 pause
 
-:: Stop the containers when the user presses a key
+:: Stop the containers without removing them when the user presses any key
 docker stop %MYSQL_CONTAINER% %KIMAI_CONTAINER%
-docker rm %MYSQL_CONTAINER% %KIMAI_CONTAINER%
 
 endlocal
