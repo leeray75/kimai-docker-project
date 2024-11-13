@@ -20,7 +20,7 @@ To run this project, make sure you have the following installed:
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/kimai-docker-project.git
+git clone https://github.com/leeray75/kimai-docker-project.git
 cd kimai-docker-project
 ```
 
