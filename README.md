@@ -42,7 +42,7 @@ Edit the `.env` file to adjust any variables as needed, such as ports and admin 
 
 **For Windows**:
 ```powershell
-start.bat
+./start.bat
 ```
 
 This will pull the necessary Docker images and start the MySQL and Kimai containers. The admin user will be created automatically using the credentials from the `.env` file, including the password.

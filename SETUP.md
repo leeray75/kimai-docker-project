@@ -15,7 +15,7 @@ Before starting, ensure that you have the following software installed on your m
 To get started, clone the project repository:
 
 ```bash
-git clone https://github.com/your-username/kimai-docker-project.git
+git clone https://github.com/leeray75/kimai-docker-project.git
 cd kimai-docker-project
 ```
 
@@ -67,7 +67,7 @@ Run the included shell script:
 Run the batch script:
 
 ```powershell
-start.bat
+./start.bat
 ```
 
 ---
