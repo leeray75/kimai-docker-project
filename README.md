@@ -1,3 +1,7 @@
+Here's the updated `README.md` file with a link to the new "Getting Started" documentation:
+
+---
+
 # Kimai Docker Project
 
 This project sets up a **local Kimai instance** using Docker, complete with MySQL as the database backend. Kimai is a powerful, open-source time-tracking solution for teams and freelancers.
@@ -61,6 +65,11 @@ http://localhost:8001
 
 ---
 
+## Corporate Setup Guide
+For configuring Kimai for a **corporate environment**, including setting up **Customers, Projects, Activities, and Tags**, please refer to the [Corporate Setup Guide](GETTING_STARTED_CORPORATE_SETUP.md).
+
+---
+
 ## Managing Docker Containers
 
 After running the `start` command, if you need to **start**, **stop**, or **restart** the Kimai and MySQL containers, it is recommended to use the Docker Desktop application or the Docker CLI.
@@ -107,4 +116,3 @@ For detailed step-by-step instructions on running this project on your local mac
 
 ## License
 This project is open-source and available under the [MIT License](LICENSE).
-
