@@ -1,7 +1,3 @@
-Here's the updated `README.md` file with a link to the new "Getting Started" documentation:
-
----
-
 # Kimai Docker Project
 
 This project sets up a **local Kimai instance** using Docker, complete with MySQL as the database backend. Kimai is a powerful, open-source time-tracking solution for teams and freelancers.
