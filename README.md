@@ -101,7 +101,7 @@ Alternatively, you can use the Docker CLI for container management:
 ---
 
 ## For Production Use
-For deploying Kimai in a production environment, it is highly recommended to use a **Docker Compose** setup with persistent volumes and proper reverse proxy configurations. Refer to the [official Kimai documentation](https://github.com/kimai/kimai2) for more details on production deployments.
+For deploying Kimai in a production environment, it is highly recommended to use a **Docker Compose** setup with persistent volumes and proper reverse proxy configurations. Refer to the [official Kimai documentation](https://www.kimai.org/documentation/docker-compose.html) for more details on production deployments.
 
 ---
 
