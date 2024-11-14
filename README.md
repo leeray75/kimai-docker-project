@@ -12,7 +12,8 @@ To run this project, make sure you have the following installed:
 
 - [Docker](https://www.docker.com/get-started)
 - [Git](https://git-scm.com/)
-- [Bash](https://www.gnu.org/software/bash/) (for Unix systems) or a compatible terminal on Windows
+- [Bash](https://www.gnu.org/software/bash/) (for Unix systems) or a compatible terminal on Windows.  
+  **Windows Users**: It is **strongly recommended** to use **Windows Subsystem for Linux (WSL)** for a better compatibility experience. Please refer to [WSL Troubleshooting Guide](WSL_TROUBLESHOOTING.md) if you encounter any issues.
 
 ---
 
@@ -40,7 +41,7 @@ Edit the `.env` file to adjust any variables as needed, such as ports and admin 
 ./start.sh
 ```
 
-**For Windows**:
+**For Windows** (WSL recommended):
 ```powershell
 ./start.bat
 ```
@@ -112,3 +113,4 @@ For detailed step-by-step instructions on running this project on your local mac
 
 ## License
 This project is open-source and available under the [MIT License](LICENSE).
+
