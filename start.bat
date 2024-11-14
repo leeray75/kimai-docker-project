@@ -1,91 +1,127 @@
 @echo off
-setlocal enabledelayedexpansion
+SETLOCAL ENABLEDELAYEDEXPANSION
 
 :: Load environment variables from .env file
-if not exist .env (
+if exist .env (
+    for /f "tokens=1,2 delims==" %%a in ('findstr /r /v "^$" .env') do (
+        set "%%a=%%b"
+    )
+) else (
     echo .env file not found!
     exit /b 1
 )
 
-for /f "tokens=1,2 delims==" %%i in (.env) do (
-    set %%i=%%j
-)
+:: Output the loaded environment variables
+echo Loaded environment variables:
+echo --------------------------------
+echo MYSQL_CONTAINER: !MYSQL_CONTAINER!
+echo MYSQL_DATABASE: !MYSQL_DATABASE!
+echo MYSQL_USER: !MYSQL_USER!
+echo MYSQL_PASSWORD: !MYSQL_PASSWORD!
+echo MYSQL_ROOT_PASSWORD: !MYSQL_ROOT_PASSWORD!
+echo MYSQL_PORT: !MYSQL_PORT!
+echo KIMAI_CONTAINER: !KIMAI_CONTAINER!
+echo KIMAI_PORT: !KIMAI_PORT!
+echo ADMIN_EMAIL: !ADMIN_EMAIL!
+echo ADMIN_PASSWORD: !ADMIN_PASSWORD!
+echo --------------------------------
+echo.
 
-:: Function to check if a Docker container exists and remove it
-:remove_container
-docker ps -a --format "{{.Names}}" | findstr /i %1 >nul
-if %ERRORLEVEL% equ 0 (
-    echo Stopping and removing existing container: %1...
-    docker stop %1 >nul
-    docker rm %1 >nul
-)
-goto :eof
+:: Define the Docker network
+set NETWORK_NAME=kimai-network
 
-:: Remove existing MySQL container if it exists
-call :remove_container %MYSQL_CONTAINER%
+:: Function to stop and remove an existing container
+call :remove_container_if_exists !MYSQL_CONTAINER!
+call :remove_container_if_exists !KIMAI_CONTAINER!
 
-:: Remove existing Kimai container if it exists
-call :remove_container %KIMAI_CONTAINER%
-
-:: Remove existing volumes (optional step to ensure a fresh start)
-echo Removing old volumes...
-docker volume rm mysql-data kimai-data >nul 2>&1
+:: Create a Docker network if it doesn't exist
+docker network inspect !NETWORK_NAME! >nul 2>&1 || docker network create !NETWORK_NAME!
 
 :: Start MySQL container with volume for persistent data
-echo Starting MySQL container...
-docker run --name %MYSQL_CONTAINER% ^
-    -e MYSQL_DATABASE=%MYSQL_DATABASE% ^
-    -e MYSQL_USER=%MYSQL_USER% ^
-    -e MYSQL_PASSWORD=%MYSQL_PASSWORD% ^
-    -e MYSQL_ROOT_PASSWORD=%MYSQL_ROOT_PASSWORD% ^
-    -p %MYSQL_PORT%:3306 ^
+echo Starting MySQL container on port !MYSQL_PORT!...
+docker run --name !MYSQL_CONTAINER! ^
+    --network !NETWORK_NAME! ^
+    -e MYSQL_DATABASE=!MYSQL_DATABASE! ^
+    -e MYSQL_USER=!MYSQL_USER! ^
+    -e MYSQL_PASSWORD=!MYSQL_PASSWORD! ^
+    -e MYSQL_ROOT_PASSWORD=!MYSQL_ROOT_PASSWORD! ^
+    -p !MYSQL_PORT!:3306 ^
     -v mysql-data:/var/lib/mysql ^
     -d mysql:8.0
 
-:: Wait until MySQL is ready
-echo Waiting for MySQL to initialize...
-set /a retries=10
-:wait_for_mysql
-docker exec %MYSQL_CONTAINER% mysqladmin ping -u%MYSQL_USER% -p%MYSQL_PASSWORD% --silent >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    set /a retries-=1
-    if %retries% leq 0 (
-        echo MySQL failed to initialize after multiple attempts. Exiting...
-        exit /b 1
-    )
-    timeout /t 5 >nul
-    goto wait_for_mysql
+:: Check if MySQL container started successfully
+if errorlevel 1 (
+    echo Error starting MySQL container
+    exit /b 1
 )
 
-:: Start Kimai container with volume for persistent data
-echo Starting Kimai container...
-docker run --name %KIMAI_CONTAINER% -d ^
-    -p %KIMAI_PORT%:8001 ^
-    -e DATABASE_URL="mysql://%MYSQL_USER%:%MYSQL_PASSWORD%@host.docker.internal:%MYSQL_PORT%/%MYSQL_DATABASE%?charset=utf8mb4&serverVersion=8.0.0" ^
+:: Wait for MySQL to initialize
+echo Waiting for MySQL to initialize...
+timeout /t 20
+
+:: Start Kimai container with volume for persistent data and updated DATABASE_URL
+echo Starting Kimai container on port !KIMAI_PORT!...
+docker run --name !KIMAI_CONTAINER! -d ^
+    --network !NETWORK_NAME! ^
+    -p !KIMAI_PORT!:8001 ^
+    -e DATABASE_URL="mysql://!MYSQL_USER!:!MYSQL_PASSWORD!@!MYSQL_CONTAINER!:3306/!MYSQL_DATABASE!?charset=utf8mb4&serverVersion=8.0.0" ^
     -v kimai-data:/opt/kimai/var ^
     kimai/kimai2:apache
 
+:: Check if Kimai container started successfully
+if errorlevel 1 (
+    echo Error starting Kimai container
+    exit /b 1
+)
+
 :: Wait for Kimai to initialize
 echo Waiting for Kimai to initialize...
-timeout /t 10 >nul
+timeout /t 10
 
-:: Run Kimai database migrations to ensure the schema is up-to-date
-echo Running Kimai database migrations...
-docker exec -ti %KIMAI_CONTAINER% /opt/kimai/bin/console doctrine:migrations:migrate --no-interaction
-
-:: Create admin user with predefined password from .env file
+:: Create admin user with predefined password from .env file if it doesn't exist
 echo Creating admin user...
-docker exec -ti %KIMAI_CONTAINER% ^
-    /opt/kimai/bin/console kimai:user:create admin %ADMIN_EMAIL% ROLE_SUPER_ADMIN %ADMIN_PASSWORD%
+call :check_user_exists !ADMIN_EMAIL!
 
-echo Kimai is now running at http://localhost:%KIMAI_PORT%
-echo Press any key to stop...
+if !ERRORLEVEL! == 0 (
+    echo Admin user with email !ADMIN_EMAIL! already exists.
+) else (
+    docker exec -ti !KIMAI_CONTAINER! ^
+        /opt/kimai/bin/console kimai:user:create admin !ADMIN_EMAIL! ROLE_SUPER_ADMIN !ADMIN_PASSWORD!
 
-:: Wait for user input to stop the containers
-pause
+    if errorlevel 1 (
+        echo Failed to create admin user.
+        exit /b 1
+    ) else (
+        echo Admin user created successfully!
+    )
+)
 
-:: Stop the containers without removing the volumes
-echo Stopping containers...
-docker stop %MYSQL_CONTAINER% %KIMAI_CONTAINER%
+echo Kimai is now running at http://localhost:!KIMAI_PORT!
+echo Press [CTRL+C] to stop.
 
-endlocal
+:: Trap to stop the containers on exit (CTRL+C)
+trap "echo Stopping containers...; docker stop !MYSQL_CONTAINER! !KIMAI_CONTAINER!; docker network rm !NETWORK_NAME!; exit" SIGINT
+
+:: Keep the script running to prevent Docker containers from stopping
+:loop
+    timeout /t 1
+    goto loop
+
+:: Function to stop and remove a container if it exists
+:remove_container_if_exists
+    set container_name=%1
+    docker ps -aq -f name=%container_name% >nul 2>&1
+    if not errorlevel 1 (
+        echo Stopping container: %container_name%
+        docker stop %container_name%
+        echo Removing container: %container_name%
+        docker rm -f %container_name%
+    )
+    goto :eof
+
+:: Function to check if an admin user exists
+:check_user_exists
+    set email=%1
+    echo Checking if user with email %email% exists...
+    docker exec -ti !KIMAI_CONTAINER! /opt/kimai/bin/console kimai:user:list | findstr /i "%email%" >nul
+    exit /b %ERRORLEVEL%
