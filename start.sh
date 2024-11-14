@@ -24,7 +24,7 @@ echo "ADMIN_PASSWORD: '$ADMIN_PASSWORD'"
 echo "--------------------------------"
 echo ""
 
-# Remove spaces and check if variables are correctly assigned
+# Remove spaces from variables
 MYSQL_PORT=$(echo "$MYSQL_PORT" | tr -d '[:space:]')
 KIMAI_PORT=$(echo "$KIMAI_PORT" | tr -d '[:space:]')
 
@@ -46,7 +46,7 @@ remove_container_if_exists() {
 check_user_exists() {
     local email=$1
     echo "Checking if user with email $email exists..."
-    docker exec -ti "$KIMAI_CONTAINER" /opt/kimai/bin/console kimai:user:list | grep -q "$email"
+    docker exec "$KIMAI_CONTAINER" /opt/kimai/bin/console kimai:user:list | grep -q "$email"
     return $?
 }
 
@@ -56,7 +56,7 @@ remove_container_if_exists "$MYSQL_CONTAINER"
 # Create a Docker network if it doesn't exist
 docker network inspect "$NETWORK_NAME" >/dev/null 2>&1 || docker network create "$NETWORK_NAME"
 
-# Start MySQL container with volume for persistent data
+# Start MySQL container in the background with volume for persistent data
 echo "Starting MySQL container on port $MYSQL_PORT..."
 docker run --name "$MYSQL_CONTAINER" \
     --network "$NETWORK_NAME" \
@@ -81,7 +81,7 @@ sleep 20
 # Remove existing Kimai container if it exists
 remove_container_if_exists "$KIMAI_CONTAINER"
 
-# Start Kimai container with volume for persistent data and updated DATABASE_URL
+# Start Kimai container in the background with volume for persistent data
 echo "Starting Kimai container on port $KIMAI_PORT..."
 docker run --name "$KIMAI_CONTAINER" -d \
     --network "$NETWORK_NAME" \
@@ -105,9 +105,9 @@ echo "Creating admin user..."
 if check_user_exists "$ADMIN_EMAIL"; then
     echo "Admin user with email '$ADMIN_EMAIL' already exists."
 else
-    docker exec -ti "$KIMAI_CONTAINER" \
+    docker exec "$KIMAI_CONTAINER" \
         /opt/kimai/bin/console kimai:user:create admin "$ADMIN_EMAIL" ROLE_SUPER_ADMIN "$ADMIN_PASSWORD"
-    
+
     if [ $? -eq 0 ]; then
         echo "Admin user created successfully!"
     else
@@ -117,12 +117,3 @@ else
 fi
 
 echo "Kimai is now running at http://localhost:$KIMAI_PORT"
-echo "Press [CTRL+C] to stop."
-
-# Trap to stop the containers on exit (CTRL+C)
-trap "echo Stopping containers...; docker stop $MYSQL_CONTAINER $KIMAI_CONTAINER; docker network rm $NETWORK_NAME; exit" SIGINT
-
-# Keep the script running to prevent Docker containers from stopping
-while true; do
-    sleep 1
-done
