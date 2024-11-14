@@ -11,21 +11,21 @@ for /f "tokens=1,2 delims==" %%i in (.env) do (
     set %%i=%%j
 )
 
-:: Check if MySQL container is already running
-docker ps -a --format "{{.Names}}" | findstr /i %MYSQL_CONTAINER% >nul
+:: Function to check if a Docker container exists and remove it
+:remove_container
+docker ps -a --format "{{.Names}}" | findstr /i %1 >nul
 if %ERRORLEVEL% equ 0 (
-    echo Stopping existing MySQL container...
-    docker stop %MYSQL_CONTAINER% >nul
-    docker rm %MYSQL_CONTAINER% >nul
+    echo Stopping and removing existing container: %1...
+    docker stop %1 >nul
+    docker rm %1 >nul
 )
+goto :eof
 
-:: Check if Kimai container is already running
-docker ps -a --format "{{.Names}}" | findstr /i %KIMAI_CONTAINER% >nul
-if %ERRORLEVEL% equ 0 (
-    echo Stopping existing Kimai container...
-    docker stop %KIMAI_CONTAINER% >nul
-    docker rm %KIMAI_CONTAINER% >nul
-)
+:: Remove existing MySQL container if it exists
+call :remove_container %MYSQL_CONTAINER%
+
+:: Remove existing Kimai container if it exists
+call :remove_container %KIMAI_CONTAINER%
 
 :: Remove existing volumes (optional step to ensure a fresh start)
 echo Removing old volumes...
@@ -44,9 +44,15 @@ docker run --name %MYSQL_CONTAINER% ^
 
 :: Wait until MySQL is ready
 echo Waiting for MySQL to initialize...
+set /a retries=10
 :wait_for_mysql
-docker exec %MYSQL_CONTAINER% mysqladmin ping -u%MYSQL_USER% -p%MYSQL_PASSWORD% --silent
+docker exec %MYSQL_CONTAINER% mysqladmin ping -u%MYSQL_USER% -p%MYSQL_PASSWORD% --silent >nul 2>&1
 if %ERRORLEVEL% neq 0 (
+    set /a retries-=1
+    if %retries% leq 0 (
+        echo MySQL failed to initialize after multiple attempts. Exiting...
+        exit /b 1
+    )
     timeout /t 5 >nul
     goto wait_for_mysql
 )
@@ -61,7 +67,7 @@ docker run --name %KIMAI_CONTAINER% -d ^
 
 :: Wait for Kimai to initialize
 echo Waiting for Kimai to initialize...
-timeout /t 10
+timeout /t 10 >nul
 
 :: Run Kimai database migrations to ensure the schema is up-to-date
 echo Running Kimai database migrations...
